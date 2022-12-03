@@ -8,8 +8,8 @@ class DrupalAttribute extends Map {
    * @returns {DrupalAttribute}
    */
   addClass(args) {
-    let self = this;
-    let values = [];
+    const self = this;
+    const values = [];
 
     for (let i = 0; i < arguments.length; i++) {
       values.push(arguments[i]);
@@ -20,11 +20,11 @@ class DrupalAttribute extends Map {
         value = [value];
       }
 
-      if (!self.has('class')) {
-        self.setAttribute('class', []);
+      if (!self.has("class")) {
+        self.setAttribute("class", []);
       }
 
-      let classes = self.get('class');
+      const classes = self.get("class");
 
       value.forEach(function (d) {
         if (classes.indexOf(d) < 0) {
@@ -39,8 +39,8 @@ class DrupalAttribute extends Map {
   removeClass(value) {
     let classes = [];
 
-    if (this.has('class')) {
-      classes = this.get('class');
+    if (this.has("class")) {
+      classes = this.get("class");
     }
 
     if (!Array.isArray(value)) {
@@ -48,7 +48,7 @@ class DrupalAttribute extends Map {
     }
 
     value.forEach(function (v) {
-      let index = classes.indexOf(v);
+      const index = classes.indexOf(v);
 
       if (index > -1) {
         classes.splice(index, 1);
@@ -61,11 +61,11 @@ class DrupalAttribute extends Map {
   hasClass(value) {
     let classes = [];
 
-    if (this.has('class')) {
-      classes = this.get('class');
+    if (this.has("class")) {
+      classes = this.get("class");
     }
 
-    return (classes.indexOf(value) > -1);
+    return classes.indexOf(value) > -1;
   }
 
   setAttribute(key, value) {
@@ -81,21 +81,21 @@ class DrupalAttribute extends Map {
   }
 
   toString() {
-    let result = '';
-    let components = [];
+    let result = "";
+    const components = [];
 
     this.forEach(function (value, key) {
       if (Array.isArray(value)) {
-        value = value.join(' ');
+        value = value.join(" ");
       }
 
-      components.push([key, '"' + value + '"'].join('='));
+      components.push([key, '"' + value + '"'].join("="));
     });
 
-    let rendered = components.join(' ');
+    const rendered = components.join(" ");
 
     if (rendered) {
-      result += ' ' + rendered;
+      result += " " + rendered;
     }
 
     return result;
