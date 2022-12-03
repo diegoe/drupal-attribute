@@ -45,10 +45,26 @@ class AttributeString extends AttributeValueBase {
   }
 }
 
+const mergeDeepArray = (...args) => {
+  const result = new Map();
+
+  args.forEach((arg) => {
+    Object.entries(arg).forEach(([k, v]) => {
+      if (result.has(k) && Array.isArray(result.get(k)) && Array.isArray(v)) {
+        result.set(k, result.get(k).concat(v));
+      } else {
+        result.set(k, v);
+      }
+    });
+  });
+
+  return result;
+};
+
 class DrupalAttribute extends Map {
   constructor(it) {
     super();
-    it.forEach((v, k) => this.setAttribute(k, v));
+    it && it.forEach((v, k) => this.setAttribute(k, v));
   }
 
   addClass(...args) {
@@ -107,10 +123,27 @@ class DrupalAttribute extends Map {
     return this;
   }
 
+  // PHP array() is used here as JS' Object, with string keys
+  toArray() {
+    const array = {};
+    this.forEach((v, k) => (array[k] = v.value));
+    return array;
+  }
+
   toString() {
     return Array.from(this.values(), (v) => v.render())
       .filter((x) => x)
       .join(" ");
+  }
+
+  merge(collection) {
+    const merged = mergeDeepArray(this.toArray(), collection.toArray());
+
+    merged.forEach((v, k) => {
+      this.setAttribute(k, v);
+    });
+
+    return this;
   }
 }
 
