@@ -1,75 +1,102 @@
-class DrupalAttribute extends Map {
-  constructor(it) {
-    super(it);
+class AttributeValueBase {
+  constructor(name, value) {
+    this.name = name;
+    this.value = value;
+    this.renderEmptyAttribute = true;
   }
 
-  /**
-   * @param {...String|Array} args
-   * @returns {DrupalAttribute}
-   */
-  addClass(args) {
-    const self = this;
-    const values = [];
+  render() {
+    const valueString = this.toString();
 
-    for (let i = 0; i < arguments.length; i++) {
-      values.push(arguments[i]);
+    // PHP does `!empty(valueString)` to test for an empty `string`.
+    // Javascript considers `""` (empty string) to be `false`, so this
+    // works as a replacement.
+    if ((this.value && this.renderEmptyAttribute) || valueString) {
+      return `${this.name}="${valueString}"`;
     }
+  }
+  toString() {}
+}
 
-    values.forEach(function (value) {
-      if (!Array.isArray(value)) {
-        value = [value];
-      }
+class AttributeArray extends AttributeValueBase {
+  constructor(name, value) {
+    super(name, Array.isArray(value) ? value : []);
+    this.renderEmptyAttribute = false;
+  }
 
-      if (!self.has("class")) {
-        self.setAttribute("class", []);
-      }
+  toString() {
+    const unique = new Set(this.value.filter((v) => v));
+    return Array.from(unique).join(" ");
+  }
+}
 
-      const classes = self.get("class");
+class AttributeBoolean extends AttributeValueBase {
+  render() {
+    return this.toString();
+  }
+  toString() {
+    return this.value === false ? "" : this.name;
+  }
+}
 
-      value.forEach(function (d) {
-        if (classes.indexOf(d) < 0) {
-          classes.push(d);
-        }
-      });
-    });
+class AttributeString extends AttributeValueBase {
+  toString() {
+    return this.value;
+  }
+}
+
+class DrupalAttribute extends Map {
+  constructor(it) {
+    super();
+    it.forEach((v, k) => this.setAttribute(k, v));
+  }
+
+  addClass(...args) {
+    const classes = args.flat();
+
+    if (this.has("class") && this.get("class") instanceof AttributeArray) {
+      this.get("class").value = [...this.get("class").value, ...classes];
+    } else {
+      this.setAttribute("class", classes);
+    }
 
     return this;
   }
 
-  removeClass(value) {
-    let classes = [];
+  removeClass(...args) {
+    if (this.has("class") && this.get("class") instanceof AttributeArray) {
+      const classes = args.flat();
 
-    if (this.has("class")) {
-      classes = this.get("class");
+      this.get("class").value = this.get("class").value.filter((v) => !classes.includes(v));
     }
-
-    if (!Array.isArray(value)) {
-      value = [value];
-    }
-
-    value.forEach(function (v) {
-      const index = classes.indexOf(v);
-
-      if (index > -1) {
-        classes.splice(index, 1);
-      }
-    });
 
     return this;
   }
 
   hasClass(value) {
-    let classes = [];
-
-    if (this.has("class")) {
-      classes = this.get("class");
+    if (this.has("class") && this.get("class") instanceof AttributeArray) {
+      return this.get("class").value.contains(value);
+    } else {
+      return false;
     }
-
-    return classes.indexOf(value) > -1;
   }
 
   setAttribute(key, value) {
-    this.set(key, value);
+    if (key == "class" && !Array.isArray(value)) {
+      value = [value];
+    }
+
+    let newAttribute;
+
+    if (Array.isArray(value)) {
+      newAttribute = new AttributeArray(key, value);
+    } else if (typeof value == "boolean") {
+      newAttribute = new AttributeBoolean(key, value);
+    } else {
+      newAttribute = new AttributeString(key, value);
+    }
+
+    this.set(key, newAttribute);
 
     return this;
   }
@@ -81,24 +108,9 @@ class DrupalAttribute extends Map {
   }
 
   toString() {
-    let result = "";
-    const components = [];
-
-    this.forEach(function (value, key) {
-      if (Array.isArray(value)) {
-        value = value.join(" ");
-      }
-
-      components.push([key, '"' + value + '"'].join("="));
-    });
-
-    const rendered = components.join(" ");
-
-    if (rendered) {
-      result += " " + rendered;
-    }
-
-    return result;
+    return Array.from(this.values(), (v) => v.render())
+      .filter((x) => x)
+      .join(" ");
   }
 }
 
