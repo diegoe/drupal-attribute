@@ -62,9 +62,25 @@ const mergeDeepArray = (...args) => {
 };
 
 class DrupalAttribute extends Map {
-  constructor(it) {
+  constructor(iterable) {
     super();
-    it && it.forEach((v, k) => this.setAttribute(k, v));
+
+    let preMap;
+
+    if (Array.isArray(iterable)) {
+      // [key, value] pairs
+      preMap = new Map(iterable);
+    } else if (typeof iterable === "object" && iterable.constructor == Object) {
+      // { key: value } object
+      preMap = new Map(Object.entries(iterable));
+    } else if (typeof iterable === "object" && iterable.constructor == Map) {
+      // Map() object
+      preMap = iterable;
+    } else {
+      preMap = new Map();
+    }
+
+    preMap.forEach((v, k) => this.setAttribute(k, v));
   }
 
   addClass(...args) {
