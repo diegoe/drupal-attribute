@@ -131,9 +131,14 @@ class DrupalAttribute extends Map {
   }
 
   toString() {
-    return Array.from(this.values(), (v) => v.render())
+    const builtString = Array.from(this.values(), (v) => v.render())
       .filter((x) => x)
       .join(" ");
+
+    // Drupal expects these strings to be padded with a leading space,
+    // so it can be used like `<element{{ attributes }}/>`. Empty
+    // strings, however, should still be empty.
+    return builtString ? " " + builtString : "";
   }
 
   merge(collection) {
