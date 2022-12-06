@@ -83,11 +83,45 @@ class DrupalAttribute extends Map {
     preMap.forEach((v, k) => this.setAttribute(k, v));
   }
 
+  /*
+   * get(key):
+   * Extend `Map.prototype.get()` to return the internal `.value` of the
+   * attribute object.
+   *
+   * This method is for compatibility when used in `Twing`, so users
+   * don't have to write `.value` after every reference to a key.
+   *
+   * TwigPHP has the benefit of implicit string conversions calling
+   * `__toString()` methods of the different `Attribute` classes. So,
+   * comparisons like `attributes.name == "some-key"` convert the `name`
+   * property to a string implicitly, calling `__toString()` which in
+   * turn exposes `->value`. This is not working as expected in JS,
+   * probably due to Twing internals, but we do not need this level of
+   * compatibility anyway. Work around the issue by explicitly exposing
+   * `.value` when `get()` happens.
+   *
+   * NOTE: If you want to modify the `Attribute` object contained in
+   * `key`, you have to use `super.get()`.
+   *
+   * NOTE: We do `["method"]()` syntax to avoid highlighting noise in
+   * editors that expect `get` to be in `get prop()` syntax.
+   *
+   * FIXME: Ideally we should do this just like PHP, and depend on
+   * string cohersion (`toString()` calls).
+   *
+   * See:
+   * - https://github.com/drupal/drupal/blob/9.5.x/core/lib/Drupal/Core/Template/TwigExtension.php#L538
+   */
+  ["get"](key) {
+    const value = super.get(key);
+    return value ? value.value : value;
+  }
+
   addClass(...args) {
     const classes = args.flat();
 
-    if (this.has("class") && this.get("class") instanceof AttributeArray) {
-      this.get("class").value = [...this.get("class").value, ...classes];
+    if (this.has("class") && super.get("class") instanceof AttributeArray) {
+      super.get("class").value = [...new Set(this.get("class").concat(classes))];
     } else {
       this.setAttribute("class", classes);
     }
@@ -96,18 +130,18 @@ class DrupalAttribute extends Map {
   }
 
   removeClass(...args) {
-    if (this.has("class") && this.get("class") instanceof AttributeArray) {
+    if (this.has("class") && super.get("class") instanceof AttributeArray) {
       const classes = args.flat();
 
-      this.get("class").value = this.get("class").value.filter((v) => !classes.includes(v));
+      super.get("class").value = this.get("class").filter((v) => !classes.includes(v));
     }
 
     return this;
   }
 
   hasClass(value) {
-    if (this.has("class") && this.get("class") instanceof AttributeArray) {
-      return this.get("class").value.contains(value);
+    if (this.has("class") && super.get("class") instanceof AttributeArray) {
+      return this.get("class").includes(value);
     } else {
       return false;
     }
