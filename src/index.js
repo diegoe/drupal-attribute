@@ -118,7 +118,7 @@ class DrupalAttribute extends Map {
   }
 
   addClass(...args) {
-    const classes = args.flat();
+    const classes = args.flat().filter((x) => x);
 
     if (this.has("class") && super.get("class") instanceof AttributeArray) {
       super.get("class").value = [...new Set(this.get("class").concat(classes))];

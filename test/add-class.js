@@ -2,12 +2,25 @@ const tap = require('tap');
 const DrupalAttribute = require('../src');
 
 tap.test('addClass', function(test) {
-  test.plan(5);
+  test.plan(6);
 
   test.test('should support method chaining', function(test) {
     let attribute = new DrupalAttribute();
 
     test.equal(attribute.addClass('foo'), attribute);
+    test.end();
+  });
+
+  test.test('should support being passed an empty string', function (test) {
+    let attribute = new DrupalAttribute();
+
+    attribute
+      .addClass('foo')
+      .addClass('')
+    ;
+
+    console.log(attribute.get('class'));
+    test.same(attribute.get('class'), ['foo']);
     test.end();
   });
 
